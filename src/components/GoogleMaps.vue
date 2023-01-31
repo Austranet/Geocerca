@@ -2,7 +2,11 @@
   <v-container id='container'>
     <v-container id='map-polygon-sections'>
       <v-card id='map'></v-card>
-      <v-card id='polygons'>
+      <v-card id='polygons'
+              class='mt-5 overflow-y-auto'
+              height='500px'
+              width='420px'
+      >
         <v-card-text>
           <p class='text-h4 text--primary'>Polígonos</p>
           <div class='text--primary'>
