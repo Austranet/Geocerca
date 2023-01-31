@@ -108,6 +108,21 @@ export default {
         this.getPolygonCoords(polygon);
       });
     },
+    getPolygonCoords(polygon) {
+      const polygonCoords = polygon.getPath().getArray();
+      const polygonId = this.polygons.length + 1;
+      const polygonCoordinates = polygonCoords.map((coord, index) => {
+        const { easting, northing } = this.getUtmByCoordinates(coord.lat(), coord.lng() );
+        return {
+          id: index + 1,
+          latitude: coord.lat(),
+          longitude: coord.lng(),
+          easting: easting,
+          northing: northing,
+        };
+      });
+      this.polygons.push({ id: polygonId, coordinates: polygonCoordinates });
+    },
     search() {
       const map = this.map;
       const google = this.google;
@@ -185,29 +200,7 @@ export default {
           place.geometry.location.lng();
       });
     },
-    getPolygonCoords(newShape) {
-      const polygon = {
-        id: this.polygons.length,
-        coordinates: [],
-      };
-      newShape.getPath().forEach((element, index) => {
-        const { easting, northing } = this.getUtmByCoordinates({
-          lat: element.lat(),
-          lng: element.lng(),
-        });
-        const coordinate = {
-          id: index,
-          latitude: element.lat(),
-          longitude: element.lng(),
-          easting: easting,
-          northing: northing,
-        };
-
-        polygon.coordinates.push(coordinate);
-      });
-      this.polygons.push(polygon);
-    },
-    getUtmByCoordinates({ lat, lng }) {
+    getUtmByCoordinates(lat, lng) {
       const utm = require('utm');
       const { easting, northing } = utm.fromLatLon(lat, lng);
       return { easting, northing };
