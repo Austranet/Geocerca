@@ -103,13 +103,14 @@ export default {
     },
     completePolygon() {
       this.google.maps.event.addListener(this.drawingManager, 'polygoncomplete', (polygon) => {
-        this.getPolygonCoords(polygon);
+        const polygonId = this.getPolygonCoords(polygon);
+        this.google.maps.event.addListener(polygon.getPath(), 'set_at', () => {
+          this.updatePolygonCoords(polygonId, polygon);
+        });
       });
     },
-    getPolygonCoords(polygon) {
-      const polygonCoords = polygon.getPath().getArray();
-      const polygonId = this.polygons.length + 1;
-      const polygonCoordinates = polygonCoords.map((coord, index) => {
+    getCoordinates(polygonCoords) {
+      return polygonCoords.map((coord, index) => {
         const { easting, northing } = this.getUtmByCoordinates(coord.lat(), coord.lng() );
         return {
           id: index + 1,
@@ -119,7 +120,18 @@ export default {
           northing: northing,
         };
       });
+    },
+    getPolygonCoords(polygon) {
+      const polygonCoords = polygon.getPath().getArray();
+      const polygonId = this.polygons.length + 1;
+      const polygonCoordinates = this.getCoordinates(polygonCoords);
       this.polygons.push({ id: polygonId, coordinates: polygonCoordinates });
+      return polygonId;
+    },
+    updatePolygonCoords(polygonId, polygon) {
+      const polygonToUpdate = this.polygons.find(polygon => polygon.id === polygonId);
+      const polygonCoords = polygon.getPath().getArray();
+      polygonToUpdate.coordinates = this.getCoordinates(polygonCoords);
     },
     getUtmByCoordinates(lat, lng) {
       const utm = require('utm');
