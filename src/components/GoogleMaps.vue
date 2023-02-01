@@ -2,7 +2,11 @@
   <v-container id='container'>
     <v-container id='map-polygon-sections'>
       <v-card id='map'></v-card>
-      <v-card id='polygons'>
+      <v-card id='polygons'
+              class='mt-5 overflow-y-auto'
+              height='500px'
+              width='420px'
+      >
         <v-card-text>
           <p class='text-h4 text--primary'>Polígonos</p>
           <div class='text--primary'>
@@ -94,24 +98,19 @@ export default {
     },
     initMap() {
       this.getLoadedMap();
-      this.search();
       this.configDrawingManager();
       this.drawingManager.setMap(this.map);
     },
-    addAutocomplete() {
-      return new this.google.maps.places.Autocomplete(
-        document.getElementById('search'),
-      );
-    },
     completePolygon() {
       this.google.maps.event.addListener(this.drawingManager, 'polygoncomplete', (polygon) => {
-        this.getPolygonCoords(polygon);
+        const polygonId = this.getPolygonCoords(polygon);
+        this.google.maps.event.addListener(polygon.getPath(), 'set_at', () => {
+          this.updatePolygonCoords(polygonId, polygon);
+        });
       });
     },
-    getPolygonCoords(polygon) {
-      const polygonCoords = polygon.getPath().getArray();
-      const polygonId = this.polygons.length + 1;
-      const polygonCoordinates = polygonCoords.map((coord, index) => {
+    getCoordinates(polygonCoords) {
+      return polygonCoords.map((coord, index) => {
         const { easting, northing } = this.getUtmByCoordinates(coord.lat(), coord.lng() );
         return {
           id: index + 1,
@@ -121,84 +120,18 @@ export default {
           northing: northing,
         };
       });
-      this.polygons.push({ id: polygonId, coordinates: polygonCoordinates });
     },
-    search() {
-      const map = this.map;
-      const google = this.google;
-      const autocomplete = this.addAutocomplete();
-      autocomplete.bindTo('bounds', map);
-
-      let infowindow = new google.maps.InfoWindow();
-      let marker = new google.maps.Marker({
-        map: map,
-        anchorPoint: new google.maps.Point(0, -29),
-      });
-
-
-      autocomplete.addListener('place_changed', function() {
-        infowindow.close();
-        marker.setVisible(false);
-        var place = autocomplete.getPlace();
-        if (!place.geometry) {
-          window.alert('Autocomplete\'s returned place contains no geometry');
-          return;
-        }
-
-        // If the place has a geometry, then present it on a map.
-        if (place.geometry.viewport) {
-          map.fitBounds(place.geometry.viewport);
-        } else {
-          map.setCenter(place.geometry.location);
-          map.setZoom(17);
-        }
-        marker.setIcon({
-          url: place.icon,
-          size: new google.maps.Size(71, 71),
-          origin: new google.maps.Point(0, 0),
-          anchor: new google.maps.Point(17, 34),
-          scaledSize: new google.maps.Size(35, 35),
-        });
-        marker.setPosition(place.geometry.location);
-        marker.setVisible(true);
-
-        var address = '';
-        if (place.address_components) {
-          address = [
-            (place.address_components[0] &&
-              place.address_components[0].short_name) ||
-            '',
-            (place.address_components[1] &&
-              place.address_components[1].short_name) ||
-            '',
-            (place.address_components[2] &&
-              place.address_components[2].short_name) ||
-            '',
-          ].join(' ');
-        }
-
-        infowindow.setContent(
-          '<div><strong>' + place.name + '</strong><br>' + address,
-        );
-        infowindow.open(map, marker);
-
-        // Location details
-        for (let i = 0; i < place.address_components.length; i++) {
-          if (place.address_components[i].types[0] == 'postal_code') {
-            document.getElementById('postal_code').innerHTML =
-              place.address_components[i].long_name;
-          }
-          if (place.address_components[i].types[0] == 'country') {
-            document.getElementById('country').innerHTML =
-              place.address_components[i].long_name;
-          }
-        }
-        document.getElementById('location').innerHTML = place.formatted_address;
-        document.getElementById('lat').innerHTML =
-          place.geometry.location.lat();
-        document.getElementById('lon').innerHTML =
-          place.geometry.location.lng();
-      });
+    getPolygonCoords(polygon) {
+      const polygonCoords = polygon.getPath().getArray();
+      const polygonId = this.polygons.length + 1;
+      const polygonCoordinates = this.getCoordinates(polygonCoords);
+      this.polygons.push({ id: polygonId, coordinates: polygonCoordinates });
+      return polygonId;
+    },
+    updatePolygonCoords(polygonId, polygon) {
+      const polygonToUpdate = this.polygons.find(polygon => polygon.id === polygonId);
+      const polygonCoords = polygon.getPath().getArray();
+      polygonToUpdate.coordinates = this.getCoordinates(polygonCoords);
     },
     getUtmByCoordinates(lat, lng) {
       const utm = require('utm');
