@@ -103,7 +103,7 @@ export default {
     },
     completePolygon() {
       this.google.maps.event.addListener(this.drawingManager, 'polygoncomplete', (polygon) => {
-        const polygonId = this.getPolygonCoords(polygon);
+        const polygonId = this.savePolygonToList(polygon);
         this.google.maps.event.addListener(polygon.getPath(), 'set_at', () => {
           this.updatePolygonCoords(polygonId, polygon);
         });
@@ -121,7 +121,7 @@ export default {
         };
       });
     },
-    getPolygonCoords(polygon) {
+    savePolygonToList(polygon) { //cambiar
       const polygonCoords = polygon.getPath().getArray();
       const polygonId = this.polygons.length + 1;
       const polygonCoordinates = this.getCoordinates(polygonCoords);
