@@ -10,7 +10,7 @@
         <v-card-text>
           <p class='text-h4 text--primary'>Polígonos</p>
           <div class='text--primary'>
-            <h3>Polígonos de SEDE</h3>
+            <h3>Polígonos de {{this.establishment.nombre_est}}</h3>
             <ul>
               <li v-for='polygon in polygons' :key='polygon.id'>
                 <strong>Polígono {{ polygon.id }}</strong>
@@ -42,15 +42,44 @@
 <script>
 import { Loader } from 'google-maps';
 
+class Establishment {
+  constructor(codigo_vu, nombre_est, latitud, longitud, este, norte) {
+    this.codigo_vu = codigo_vu;
+    this.nombre_est = nombre_est;
+    this.latitud = latitud;
+    this.longitud = longitud;
+    this.este = este;
+    this.norte = norte;
+  }
+}
+
 const options = { libraries: ['drawing', 'places'] };
 const loader = new Loader('AIzaSyBD7Rmh9dkpF8wpYcaVA7obVdYyPm8ODPw', options);
 export default {
   name: 'GoogleMaps',
-
+  props: {
+    establishment: {
+      type: Establishment,
+      required: true
+    }
+  },
+  watch: {
+    establishment: {
+      handler: function() {
+        this.initMap();
+        this.completePolygon();
+      },
+      deep: true
+    }
+  },
   mounted: async function() {
-    this.google = await loader.load();
-    this.initMap();
-    this.completePolygon();
+    if (this.establishment.codigo_vu === '') {
+      this.$router.push('/');
+    } else {
+      this.google = await loader.load();
+      this.initMap();
+      this.completePolygon();
+    }
   },
 
   data: () => ({
@@ -58,14 +87,6 @@ export default {
     map: null,
     drawingManager: null,
     google: null,
-    establishment: {
-      codigo_vu: '',
-      nombre_est: '',
-      latitud: -33.4432,
-      longitud: -70.6574,
-      este: null,
-      norte: null,
-    },
   }),
 
   methods: {
