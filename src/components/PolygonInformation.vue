@@ -7,7 +7,10 @@
     <v-card-text>
       <div class='text--primary'>
         <h3>Establecimiento: {{this.establishment.nombre_est}}</h3>
-        <h3>Código {{this.establishment.codigo_vu}}</h3>
+        <h3>Código: {{this.establishment.codigo_vu}}</h3>
+        <h3>Coordenadas (Lat, Long): {{this.establishment.latitud}}, {{this.establishment.longitud}} </h3>
+        <h3>Coordenadas (Este, Norte): {{this.establishment.este}}, {{this.establishment.norte}} </h3>
+        <h3>Huso: {{this.establishment.huso}}</h3>
         <ul>
           <li v-for='polygon in polygons' :key='polygon.id'>
             <strong>Polígono {{ polygon.id }}</strong>

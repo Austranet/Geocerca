@@ -16,17 +16,16 @@
 
 <script>
 import { Loader } from 'google-maps';
-// import PolygonInformation from '@/components/PolygonInformation.vue';
 import PopupsPolygonInformation from '@/components/PopupsPolygonInformation.vue';
-
 class Establishment {
-  constructor(codigo_vu, nombre_est, latitud, longitud, este, norte) {
+  constructor(codigo_vu, nombre_est, latitud, longitud, este, norte, huso) {
     this.codigo_vu = codigo_vu;
     this.nombre_est = nombre_est;
     this.latitud = latitud;
     this.longitud = longitud;
     this.este = este;
     this.norte = norte;
+    this.huso = huso;
   }
 }
 
@@ -44,6 +43,7 @@ export default {
   watch: {
     establishment: {
       handler: function() {
+        this.calculateCoordinates();
         this.cleanMap();
       },
       deep: true
@@ -126,7 +126,7 @@ export default {
         };
       });
     },
-    savePolygonToList(polygon) { //cambiar
+    savePolygonToList(polygon) {
       const polygonCoords = polygon.getPath().getArray();
       const polygonId = this.polygons.length + 1;
       const polygonCoordinates = this.getCoordinates(polygonCoords);
@@ -143,17 +143,40 @@ export default {
       const { easting, northing } = utm.fromLatLon(lat, lng);
       return { easting, northing };
     },
+    getLatLongByUtm(este, norte, huso) {
+      const utm = require('utm');
+      const { latitude, longitude } = utm.toLatLon(este, norte, huso, 'S');
+      return { latitude, longitude };
+    },
+    setLatLongByUtm() {
+      const { latitude, longitude } = this.getLatLongByUtm(this.establishment.este, this.establishment.norte, this.establishment.huso);
+      this.establishment.latitud = latitude;
+      this.establishment.longitud = longitude;
+    },
+    setUtmByCoordinates() {
+      const { easting, northing } = this.getUtmByCoordinates(this.establishment.latitud, this.establishment.longitud);
+      this.establishment.este = easting;
+      this.establishment.norte = northing;
+    },
     cleanMap() {
       this.polygons = [];
       this.getLoadedMap();
       this.drawingManager.setMap(this.map);
     },
-    savePolygons() {
-      console.log('saving');
-    },
     showPolygonsInformation() {
       this.viewPolygonsInformation = !this.viewPolygonsInformation;
     },
+    isUtm() {
+      return this.establishment.este !== null && this.establishment.norte !== null;
+    },
+    calculateCoordinates() {
+      if (this.establishment.latitud !== null && this.establishment.este !== null) return;
+      if (this.isUtm()) this.setLatLongByUtm()
+      else this.setUtmByCoordinates()
+    },
+    savePolygons() {
+      console.log('saving');
+    }
   },
 };
 </script>
