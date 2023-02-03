@@ -5,9 +5,9 @@
           width='1000px'
   >
     <v-card-text>
-      <p class='text-h4 text--primary'>Polígonos</p>
       <div class='text--primary'>
-        <h3>Polígonos de {{this.establishment.nombre_est}}</h3>
+        <h3>Establecimiento: {{this.establishment.nombre_est}}</h3>
+        <h3>Código {{this.establishment.codigo_vu}}</h3>
         <ul>
           <li v-for='polygon in polygons' :key='polygon.id'>
             <strong>Polígono {{ polygon.id }}</strong>
