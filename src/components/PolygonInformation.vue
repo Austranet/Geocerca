@@ -6,35 +6,28 @@
   >
     <v-card-text>
       <div class='text--primary'>
-        <h3>Establecimiento: {{this.establishment.nombre_est}}</h3>
-        <h3>Código: {{this.establishment.codigo_vu}}</h3>
-        <h3>Coordenadas (Lat, Long): {{this.establishment.latitud}}, {{this.establishment.longitud}} </h3>
-        <h3>Coordenadas (Este, Norte): {{this.establishment.este}}, {{this.establishment.norte}} </h3>
-        <h3>Huso: {{this.establishment.huso}}</h3>
-        <ul>
-          <li v-for='polygon in polygons' :key='polygon.id'>
-            <strong>Polígono {{ polygon.id }}</strong>
-            <ul>
-              <li v-for='coordinate in polygon.coordinates' :key='coordinate.id'>
-                <strong>Coordenada {{ coordinate.id }}</strong>
-                <ul>
-                  <li><strong>Latitud:</strong> <span>{{ coordinate.latitude }}</span></li>
-                  <li><strong>Longitud:</strong> <span>{{ coordinate.longitude }}</span></li>
-                  <li><strong>Este:</strong> <span>{{ coordinate.easting }}</span></li>
-                  <li><strong>Norte:</strong> <span>{{ coordinate.northing }}</span></li>
-                </ul>
-              </li>
-            </ul>
-          </li>
-        </ul>
+        <div class='polygon-description'>
+          <PanelDefault title='Establecimiento' :content='this.establishment.nombre_est' />
+          <PanelDefault title='Código' :content='this.establishment.codigo_vu' />
+          <PanelDefault title='Coordenadas (Lat, Long)' :content='this.establishment.latitud + ", " + this.establishment.longitud' />
+          <PanelDefault title='Coordenadas (Este, Norte)' :content='this.establishment.este + ", " + this.establishment.norte' />
+          <PanelDefault title='Huso' :content='this.establishment.huso' />
+        </div>
+        <TableOfPolygons :polygons='this.polygons'
+            :codigo_vu='this.establishment.codigo_vu'
+        />
       </div>
     </v-card-text>
   </v-card>
 </template>
 
 <script>
+import TableOfPolygons from '@/components/TableOfPolygons.vue';
+import PanelDefault from '@/components/PanelDefault.vue';
+
 export default {
   name: 'PolygonInformation',
+  components: { PanelDefault, TableOfPolygons },
   props: {
     polygons: {
       type: Array,
@@ -59,5 +52,12 @@ export default {
   height: 100%;
 
   background-color: rgb(255, 255, 255);
+}
+
+.polygon-description {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
 }
 </style>

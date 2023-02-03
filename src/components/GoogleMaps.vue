@@ -176,6 +176,7 @@ export default {
     },
     savePolygons() {
       console.log('saving');
+      console.log(JSON.stringify(this.polygons));
     }
   },
 };
