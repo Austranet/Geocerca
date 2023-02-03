@@ -1,56 +1,68 @@
 <template>
   <v-container id='container'>
     <v-container id='map-polygon-sections'>
-      <v-card id='map'></v-card>
-      <v-card id='polygons'
-              class='mt-5 overflow-y-auto'
-              height='500px'
-              width='420px'
-      >
-        <v-card-text>
-          <p class='text-h4 text--primary'>Polígonos</p>
-          <div class='text--primary'>
-            <h3>Polígonos de SEDE</h3>
-            <ul>
-              <li v-for='polygon in polygons' :key='polygon.id'>
-                <strong>Polígono {{ polygon.id }}</strong>
-                <ul>
-                  <li v-for='coordinate in polygon.coordinates' :key='coordinate.id'>
-                    <strong>Coordenada {{ coordinate.id }}</strong>
-                    <ul>
-                      <li><strong>Latitud:</strong> <span>{{ coordinate.latitude }}</span></li>
-                      <li><strong>Longitud:</strong> <span>{{ coordinate.longitude }}</span></li>
-                      <li><strong>Este:</strong> <span>{{ coordinate.easting }}</span></li>
-                      <li><strong>Norte:</strong> <span>{{ coordinate.northing }}</span></li>
-                    </ul>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </div>
-        </v-card-text>
+      <v-card id='map'>
       </v-card>
     </v-container>
     <v-container id='button-section'>
       <v-btn @click='cleanMap' color='primary' class='mx-2'>Limpiar</v-btn>
       <v-btn @click='savePolygons' color='primary' class='mx-2'>Guardar</v-btn>
+      <v-btn @click='showPolygonsInformation' color='primary' class='mx-2'>Ver Información</v-btn>
     </v-container>
+  <PopupsPolygonInformation :view-polygons-information='viewPolygonsInformation' :establishment='establishment' :polygons='polygons' />
   </v-container>
 
 </template>
 
 <script>
 import { Loader } from 'google-maps';
+import PopupsPolygonInformation from '@/components/PopupsPolygonInformation.vue';
+class Establishment {
+  constructor(codigo_vu, nombre_est, latitud, longitud, este, norte, huso) {
+    this.codigo_vu = codigo_vu;
+    this.nombre_est = nombre_est;
+    this.latitud = latitud;
+    this.longitud = longitud;
+    this.este = este;
+    this.norte = norte;
+    this.huso = huso;
+  }
+}
 
 const options = { libraries: ['drawing', 'places'] };
 const loader = new Loader('AIzaSyBD7Rmh9dkpF8wpYcaVA7obVdYyPm8ODPw', options);
 export default {
   name: 'GoogleMaps',
-
+  components: { PopupsPolygonInformation },
+  props: {
+    establishment: {
+      type: Establishment,
+      required: true
+    }
+  },
+  watch: {
+    establishment: {
+      handler: function() {
+        this.calculateCoordinates();
+        this.cleanMap();
+      },
+      deep: true
+    },
+    polygons: {
+      handler: function() {
+        this.viewPolygonsInformation = false;
+      },
+      deep: true
+    }
+  },
   mounted: async function() {
-    this.google = await loader.load();
-    this.initMap();
-    this.completePolygon();
+    if (this.establishment.codigo_vu === '') {
+      this.$router.push('/');
+    } else {
+      this.google = await loader.load();
+      this.initMap();
+      this.completePolygon();
+    }
   },
 
   data: () => ({
@@ -58,14 +70,7 @@ export default {
     map: null,
     drawingManager: null,
     google: null,
-    establishment: {
-      codigo_vu: '',
-      nombre_est: '',
-      latitud: -33.4432,
-      longitud: -70.6574,
-      este: null,
-      norte: null,
-    },
+    viewPolygonsInformation: false,
   }),
 
   methods: {
@@ -121,7 +126,7 @@ export default {
         };
       });
     },
-    savePolygonToList(polygon) { //cambiar
+    savePolygonToList(polygon) {
       const polygonCoords = polygon.getPath().getArray();
       const polygonId = this.polygons.length + 1;
       const polygonCoordinates = this.getCoordinates(polygonCoords);
@@ -138,10 +143,36 @@ export default {
       const { easting, northing } = utm.fromLatLon(lat, lng);
       return { easting, northing };
     },
+    getLatLongByUtm(este, norte, huso) {
+      const utm = require('utm');
+      const { latitude, longitude } = utm.toLatLon(este, norte, huso, 'S');
+      return { latitude, longitude };
+    },
+    setLatLongByUtm() {
+      const { latitude, longitude } = this.getLatLongByUtm(this.establishment.este, this.establishment.norte, this.establishment.huso);
+      this.establishment.latitud = latitude;
+      this.establishment.longitud = longitude;
+    },
+    setUtmByCoordinates() {
+      const { easting, northing } = this.getUtmByCoordinates(this.establishment.latitud, this.establishment.longitud);
+      this.establishment.este = easting;
+      this.establishment.norte = northing;
+    },
     cleanMap() {
       this.polygons = [];
       this.getLoadedMap();
       this.drawingManager.setMap(this.map);
+    },
+    showPolygonsInformation() {
+      this.viewPolygonsInformation = !this.viewPolygonsInformation;
+    },
+    isUtm() {
+      return this.establishment.este !== null && this.establishment.norte !== null;
+    },
+    calculateCoordinates() {
+      if (this.establishment.latitud !== null && this.establishment.este !== null) return;
+      if (this.isUtm()) this.setLatLongByUtm()
+      else this.setUtmByCoordinates()
     },
     savePolygons() {
       console.log('saving');
@@ -151,41 +182,39 @@ export default {
 </script>
 
 <style scoped>
-/*//pon la descripcion de polygonos derecha y el map izquierda*/
 #container {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  /*//quita espacio entre los elementos*/
-
+  flex-direction: row;
   align-items: center;
   width: 100%;
   height: 100%;
 }
 
 #map {
-  width: 50%;
-  height: 100%;
-}
-
-#polygons {
-  width: 50%;
+  width: 100%;
   height: 100%;
 }
 
 #button-section {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  width: 100%;
+  flex-direction: column;
+  /*align-content: space-around;*/
+  align-items: stretch;
+  width: 20%;
   height: 100%;
+}
+
+#button-section > button {
+  width: 100%;
+  height: 50px;
+  /*//separator*/
+  margin-bottom: 10px;
+  font-size: 10px;
 }
 
 #map-polygon-sections {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
   width: 100%;
   height: 100%;
 }
