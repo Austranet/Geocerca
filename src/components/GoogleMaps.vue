@@ -4,12 +4,17 @@
       <v-card id='map'>
       </v-card>
     </v-container>
-    <v-container id='button-section'>
-      <v-btn @click='cleanMap' color='primary' class='mx-2'>Limpiar</v-btn>
+    <v-container
+      id='button-section'
+      v-if='polygons.length > 0'>
+      <v-btn
+        @click='cleanMap' color='primary' class='mx-2'>Limpiar</v-btn>
       <v-btn @click='savePolygons' color='primary' class='mx-2'>Guardar</v-btn>
       <v-btn @click='showPolygonsInformation' color='primary' class='mx-2'>Ver Información</v-btn>
     </v-container>
-  <PopupsPolygonInformation :view-polygons-information='viewPolygonsInformation' :establishment='establishment' :polygons='polygons' />
+    <PopupsPolygonInformation :view-polygons-information='viewPolygonsInformation' :establishment='establishment' :polygons='polygons' />
+    <PopupsMessage
+      :saved-message='this.savedMessage' :is-saved='this.isSaved'/>
   </v-container>
 
 </template>
@@ -17,6 +22,9 @@
 <script>
 import { Loader } from 'google-maps';
 import PopupsPolygonInformation from '@/components/PopupsPolygonInformation.vue';
+import { pushBulkCoordinates, getCoodinatesByEstablishment } from '@/api/ApiServices';
+import PopupsMessage from '@/components/PopupsMessage.vue';
+
 class Establishment {
   constructor(codigo_vu, nombre_est, latitud, longitud, este, norte, huso) {
     this.codigo_vu = codigo_vu;
@@ -33,7 +41,7 @@ const options = { libraries: ['drawing', 'places'] };
 const loader = new Loader('AIzaSyBD7Rmh9dkpF8wpYcaVA7obVdYyPm8ODPw', options);
 export default {
   name: 'GoogleMaps',
-  components: { PopupsPolygonInformation },
+  components: { PopupsMessage, PopupsPolygonInformation },
   props: {
     establishment: {
       type: Establishment,
@@ -45,6 +53,7 @@ export default {
       handler: function() {
         this.calculateCoordinates();
         this.cleanMap();
+        this.getCoordinatesToEstablisment();
       },
       deep: true
     },
@@ -71,6 +80,9 @@ export default {
     drawingManager: null,
     google: null,
     viewPolygonsInformation: false,
+    isSaved: false,
+    savedMessage: 'Guardado Correctamente',
+    containPolygons: false,
   }),
 
   methods: {
@@ -174,11 +186,63 @@ export default {
       if (this.isUtm()) this.setLatLongByUtm()
       else this.setUtmByCoordinates()
     },
-    savePolygons() {
-      console.log('saving');
-      console.log(JSON.stringify(this.polygons));
+    async savePolygons() {
+      const information = {
+        codigo_vu: this.establishment.codigo_vu,
+        polygons: this.polygons
+      }
+      await pushBulkCoordinates(information);
+      this.isSaved = true;
+      this.cleanMap();
+      await this.getCoordinatesToEstablisment();
+      setTimeout(() => {
+        this.isSaved = false;
+      }, 3000);
+
+    },
+    async getCoordinatesToEstablisment() {
+      const coordinates = await getCoodinatesByEstablishment(this.establishment.codigo_vu);
+      if (coordinates.length === 0) return;
+      this.containPolygons = true;
+      this.getLoadedMap();
+      this.drawingManager.setMap(this.map);
+      const polygons = [];
+      coordinates.forEach((coordinate, index) => {
+        if (index === 0) {
+          polygons.push({
+            id: coordinate.id_poligono,
+            coordinates: [coordinate]
+          });
+        } else {
+          const lastPolygon = polygons[polygons.length - 1];
+          if (lastPolygon.id === coordinate.id_poligono) {
+            lastPolygon.coordinates.push(coordinate);
+          } else {
+            polygons.push({
+              id: coordinate.id_poligono,
+              coordinates: [coordinate]
+            });
+          }
+        }
+      });
+      polygons.forEach(polygon => {
+        const polygonCoordinates = polygon.coordinates.map(coordinate => {
+          return new this.google.maps.LatLng(coordinate.latitud, coordinate.longitud);
+        });
+        const polygonToDraw = new this.google.maps.Polygon({
+          paths: polygonCoordinates,
+          strokeColor: '#FF0000',
+          strokeOpacity: 0.8,
+          strokeWeight: 2,
+          fillColor: '#FF0000',
+          fillOpacity: 0.35
+        });
+        polygonToDraw.setMap(this.map);
+      });
     }
   },
+
+
 };
 </script>
 
