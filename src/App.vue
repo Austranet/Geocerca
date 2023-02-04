@@ -1,6 +1,12 @@
 <template>
   <v-app>
     <v-container>
+      <v-progress-circular
+        v-if="!Object.keys(establishment).length"
+        indeterminate
+        color="primary"
+        id='charging-indicator'
+      />
       <v-row>
         <v-col
           class='mt-5 overflow-y-auto fill-width'
@@ -41,7 +47,7 @@
 
 <script>
 import GoogleMaps from './components/GoogleMaps';
-import { getEstablishments, getEstablishmentsByVuCode } from '@/api/ApiServices';
+import { getCoodinatesByEstablishment, getEstablishments } from '@/api/ApiServices';
 
 export default {
   name: 'App',
@@ -51,29 +57,25 @@ export default {
   },
 
   data:() => ({
-    message: process.env.VUE_APP_EXAMPLE,
     codigo_vu: '',
     establishments: [],
     establishment: {
 
     },
+    coordinates: [],
   }),
   methods: {
     async getEstablishment() {
       const response = await getEstablishments();
       this.establishments = response.data;
     },
-    async getEstablishmentByCode() {
-      const response = await getEstablishmentsByVuCode('5452292');
-      this.establishment = response.data;
-    },
-    getLocalEstablishmentByVuCode(codigo_vu) {
+    async getLocalEstablishmentByVuCode(codigo_vu) {
       this.establishment = this.establishments.find((establishment) => establishment.codigo_vu === codigo_vu);
+      this.coordinates = await getCoodinatesByEstablishment(this.establishment.codigo_vu);
     },
   },
   created() {
     this.getEstablishment();
-    this.getEstablishmentByCode();
   },
 };
 </script>
@@ -81,5 +83,11 @@ export default {
 <style scoped>
 .fill-width {
   height: 100vh;
+}
+#charging-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 </style>
