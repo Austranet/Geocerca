@@ -40,7 +40,7 @@
             :establishment="establishment"
           />
           <v-card
-            v-else
+            v-else-if="Object.keys(establishments).length"
             class='fill-height'
             color='grey lighten-4'
           >
