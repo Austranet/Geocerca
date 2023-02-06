@@ -2,7 +2,7 @@
   <v-app>
     <v-container>
       <v-progress-circular
-        v-if="!Object.keys(establishment).length"
+        v-if="!Object.keys(establishments).length"
         indeterminate
         color="primary"
         id='charging-indicator'
@@ -39,6 +39,17 @@
             v-if="Object.keys(establishment).length"
             :establishment="establishment"
           />
+          <v-card
+            v-else
+            class='fill-height'
+            color='grey lighten-4'
+          >
+            <v-card-text>
+              <v-card-title class='text-h5'>
+                Seleccione un establecimiento
+              </v-card-title>
+            </v-card-text>
+          </v-card>
         </v-col>
       </v-row>
     </v-container>
