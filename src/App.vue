@@ -35,10 +35,15 @@
           </v-list>
         </v-col>
         <v-col md="8">
-          <GoogleMaps
-            v-if="Object.keys(establishment).length"
+          <ViewMaps
+            v-if="Object.keys(coordinates).length && Object.keys(establishment).length"
             :establishment="establishment"
+            :coordinates="coordinates"
           />
+<!--          <GoogleMaps-->
+<!--            v-if="Object.keys(establishment).length"-->
+<!--            :establishment="establishment"-->
+<!--          />-->
           <v-card
             v-else-if="Object.keys(establishments).length"
             class='fill-height'
@@ -57,21 +62,22 @@
 </template>
 
 <script>
-import GoogleMaps from './components/GoogleMaps';
+// import GoogleMaps from './components/GoogleMaps';
 import { getCoodinatesByEstablishment, getEstablishments } from '@/api/ApiServices';
+import ViewMaps from '@/components/ViewMaps.vue';
 
 export default {
   name: 'App',
 
   components: {
-    GoogleMaps,
+    ViewMaps,
+    // GoogleMaps,
   },
 
   data:() => ({
     codigo_vu: '',
     establishments: [],
     establishment: {
-
     },
     coordinates: [],
   }),
@@ -83,7 +89,7 @@ export default {
     async getLocalEstablishmentByVuCode(codigo_vu) {
       this.establishment = this.establishments.find((establishment) => establishment.codigo_vu === codigo_vu);
       this.coordinates = await getCoodinatesByEstablishment(this.establishment.codigo_vu);
-    },
+      },
   },
   created() {
     this.getEstablishment();
