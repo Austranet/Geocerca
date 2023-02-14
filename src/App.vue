@@ -2,7 +2,7 @@
   <v-app>
     <v-container>
       <v-progress-circular
-        v-if="!Object.keys(establishments).length"
+        v-if="!Object.keys(establishment).length"
         indeterminate
         color="primary"
         id='charging-indicator'
@@ -35,26 +35,10 @@
           </v-list>
         </v-col>
         <v-col md="8">
-          <ViewMaps
-            v-if="Object.keys(coordinates).length && Object.keys(establishment).length"
+          <GoogleMaps
+            v-if="Object.keys(establishment).length"
             :establishment="establishment"
-            :coordinates="coordinates"
           />
-<!--          <GoogleMaps-->
-<!--            v-if="Object.keys(establishment).length"-->
-<!--            :establishment="establishment"-->
-<!--          />-->
-          <v-card
-            v-else-if="Object.keys(establishments).length"
-            class='fill-height'
-            color='grey lighten-4'
-          >
-            <v-card-text>
-              <v-card-title class='text-h5'>
-                Seleccione un establecimiento
-              </v-card-title>
-            </v-card-text>
-          </v-card>
         </v-col>
       </v-row>
     </v-container>
@@ -62,22 +46,21 @@
 </template>
 
 <script>
-// import GoogleMaps from './components/GoogleMaps';
+import GoogleMaps from './components/GoogleMaps';
 import { getCoodinatesByEstablishment, getEstablishments } from '@/api/ApiServices';
-import ViewMaps from '@/components/ViewMaps.vue';
 
 export default {
   name: 'App',
 
   components: {
-    ViewMaps,
-    // GoogleMaps,
+    GoogleMaps,
   },
 
   data:() => ({
     codigo_vu: '',
     establishments: [],
     establishment: {
+
     },
     coordinates: [],
   }),
@@ -89,7 +72,7 @@ export default {
     async getLocalEstablishmentByVuCode(codigo_vu) {
       this.establishment = this.establishments.find((establishment) => establishment.codigo_vu === codigo_vu);
       this.coordinates = await getCoodinatesByEstablishment(this.establishment.codigo_vu);
-      },
+    },
   },
   created() {
     this.getEstablishment();
