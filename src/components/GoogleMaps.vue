@@ -4,14 +4,9 @@
       <v-card id='map'>
       </v-card>
     </v-container>
-    <v-container
-      id='button-section'
-      v-if='polygons.length > 0'>
-      <v-btn
-        @click='cleanMap' color='primary' class='mx-2'>Limpiar</v-btn>
-      <v-btn @click='savePolygons' color='primary' class='mx-2'>Guardar</v-btn>
-      <v-btn @click='showPolygonsInformation' color='primary' class='mx-2'>Ver Información</v-btn>
-    </v-container>
+    <ActionsButton :polygons='this.polygons' :show-polygons-information='showPolygonsInformation'
+                   :save-polygons='savePolygons'
+                   :clean-map='cleanMap'/>
     <PopupsPolygonInformation :view-polygons-information='viewPolygonsInformation' :establishment='establishment' :polygons='polygons' />
     <PopupsMessage
       :saved-message='this.savedMessage' :is-saved='this.isSaved'/>
@@ -24,6 +19,7 @@ import { Loader } from 'google-maps';
 import PopupsPolygonInformation from '@/components/PopupsPolygonInformation.vue';
 import { pushBulkCoordinates, getCoodinatesByEstablishment } from '@/api/ApiServices';
 import PopupsMessage from '@/components/PopupsMessage.vue';
+import ActionsButton from '@/components/ActionsButton.vue';
 
 class Establishment {
   constructor(codigo_vu, nombre_est, latitud, longitud, este, norte, huso) {
@@ -41,7 +37,7 @@ const options = { libraries: ['drawing', 'places'] };
 const loader = new Loader('AIzaSyBD7Rmh9dkpF8wpYcaVA7obVdYyPm8ODPw', options);
 export default {
   name: 'GoogleMaps',
-  components: { PopupsMessage, PopupsPolygonInformation },
+  components: { ActionsButton, PopupsMessage, PopupsPolygonInformation },
   props: {
     establishment: {
       type: Establishment,
@@ -65,6 +61,7 @@ export default {
     }
   },
   mounted: async function() {
+    console.log('mounted');
     if (this.establishment.codigo_vu === '') {
       this.$router.push('/');
     } else {
@@ -258,23 +255,6 @@ export default {
 #map {
   width: 100%;
   height: 100%;
-}
-
-#button-section {
-  display: flex;
-  flex-direction: column;
-  /*align-content: space-around;*/
-  align-items: stretch;
-  width: 20%;
-  height: 100%;
-}
-
-#button-section > button {
-  width: 100%;
-  height: 50px;
-  /*//separator*/
-  margin-bottom: 10px;
-  font-size: 10px;
 }
 
 #map-polygon-sections {
