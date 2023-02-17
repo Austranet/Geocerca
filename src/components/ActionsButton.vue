@@ -13,7 +13,6 @@
 export default {
   name: 'ActionsButton',
   props: {
-    //function cleanMap
     cleanMap: {
       type: Function,
       required: true

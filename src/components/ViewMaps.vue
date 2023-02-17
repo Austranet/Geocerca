@@ -66,11 +66,18 @@ export default {
     isEdit: false,
   }),
   methods: {
+    /**
+     * @description Inicializa el mapa y el poligono
+     */
     initMap() {
       this.getLoadedMap()
       this.polygon = new this.google.maps.Polygon(this.polygonOptions);
       this.polygon.setMap(this.map);
     },
+    /**
+     * @description Obtiene el mapa cargado
+     * @returns {void}
+     */
     getLoadedMap() {
       const { latitud, longitud } = this.establishment;
       this.map = new this.google.maps.Map(document.getElementById('mapView'), {
@@ -78,6 +85,10 @@ export default {
         center: { lat: latitud, lng: longitud },
       });
     },
+    /**
+     * @description Dibuja los poligonos de un establecimiento en el mapa
+     * @returns {void}
+     */
     drawPolygon() {
       const polygons = [];
       this.coordinates.forEach((coordinate, index) => {
@@ -107,6 +118,10 @@ export default {
       });
       this.polygon.setPaths(this.polygonCoordinates);
     },
+    /**
+     * @description Dibuja los puntos de referencia de un establecimiento
+     * @returns {void}
+     */
     drawMarkers() {
       if (this.markers.length === 0) return;
       this.markers.forEach(marker => {
@@ -118,9 +133,12 @@ export default {
         this.configMarker('https://maps.google.com/mapfiles/ms/icons/red.png', markerInstance)
       });
     },
+    /**
+     * @description Detecta el evento click dentro de un poligono y crea un marcador
+     * @returns {void}
+     */
     defaultEvents() {
       this.google.maps.event.addListener(this.polygon, 'click', (event) => {
-
         const marker = new this.google.maps.Marker({
           position: event.latLng,
           map: this.map,
@@ -141,6 +159,11 @@ export default {
 
       });
     },
+    /**
+     * @description Guarda los puntos de referencia de un establecimiento en la lista de markers
+     * @param event
+     * @returns {number} id
+     */
     addMarker(event) {
       const id = this.markers.length + 1;
       const marker =  {
@@ -154,18 +177,39 @@ export default {
       this.markers.push(marker);
       return id;
     },
+    /**
+     * @description Cambia el icono de un marcador
+     * @param icon {string}
+     * @param marker {object}
+     * @returns {void}
+     */
     configMarker(icon, marker) {
       marker.setIcon(icon);
     },
+    /**
+     * @description Elimina un marcador de la lista de markers y del mapa
+     * @param infoWindow {object}
+     * @param id {number}
+     * @param marker {object}
+     * @returns {void}
+     */
     deleteMarker(infoWindow, id, marker) {
       this.markers = this.markers.filter(marker => marker.id !== id);
       marker.setMap(null);
       infoWindow.close();
     },
+    /**
+     * @description Guarda los puntos de referencia de un establecimiento en la base de datos y limpia la lista de markers
+     * @returns {Promise<void>}
+     */
     async saveWayPoints() {
       await pushBulkWayPoints(this.markers);
       this.markers = [];
     },
+    /**
+     * @description Obtiene los puntos de referencia de un establecimiento de la base de datos
+     * @returns {Promise<void>}
+     */
     async getWayPoints() {
       this.markers = await getWayPointsByVuCode(this.establishment.codigo_vu);
       this.isEdit = this.markers.length !== 0;
@@ -206,7 +250,6 @@ export default {
 #save-section {
   display: flex;
   flex-direction: column;
-  /*align-content: space-around;*/
   align-items: stretch;
   width: 20%;
   height: 100%;

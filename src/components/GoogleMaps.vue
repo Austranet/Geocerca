@@ -83,7 +83,10 @@ export default {
   }),
 
   methods: {
-
+    /**
+     * @description Configura el dibujador de poligonos en base a opciones
+     * @returns {void}
+     */
     configDrawingManager() {
       this.drawingManager = new this.google.maps.drawing.DrawingManager({
         drawingControl: true,
@@ -103,6 +106,10 @@ export default {
         },
       });
     },
+    /**
+     * @description Obtiene el mapa cargado
+     * @returns {void}
+     */
     getLoadedMap() {
       const { latitud, longitud } = this.establishment;
       this.map = new this.google.maps.Map(document.getElementById('map'), {
@@ -110,11 +117,19 @@ export default {
         center: { lat: latitud, lng: longitud },
       });
     },
+    /**
+     * @description Inicializa el mapa
+     * @returns {void}
+     */
     initMap() {
       this.getLoadedMap();
       this.configDrawingManager();
       this.drawingManager.setMap(this.map);
     },
+    /**
+     * @description Detecta cuando se completa el poligono y lo guarda en la lista
+     * @returns {void}
+     */
     completePolygon() {
       this.google.maps.event.addListener(this.drawingManager, 'polygoncomplete', (polygon) => {
         const polygonId = this.savePolygonToList(polygon);
@@ -123,6 +138,11 @@ export default {
         });
       });
     },
+    /**
+     * @description Obtiene las coordenadas en UTM y las guarda en el poligono
+     * @param {Array} polygonCoords
+     * @returns {Array}
+     */
     getCoordinates(polygonCoords) {
       return polygonCoords.map((coord, index) => {
         const { easting, northing } = this.getUtmByCoordinates(coord.lat(), coord.lng() );
@@ -135,6 +155,11 @@ export default {
         };
       });
     },
+    /**
+     * @description Guarda el poligono en la lista
+     * @param {Object} polygon
+     * @returns {Number}
+     */
     savePolygonToList(polygon) {
       const polygonCoords = polygon.getPath().getArray();
       const polygonId = this.polygons.length + 1;
@@ -142,47 +167,94 @@ export default {
       this.polygons.push({ id: polygonId, coordinates: polygonCoordinates });
       return polygonId;
     },
+    /**
+     * @description Actualiza las coordenadas del poligono
+     * @param {Number} polygonId
+     * @param {Object} polygon
+     * @returns {void}
+     */
     updatePolygonCoords(polygonId, polygon) {
       const polygonToUpdate = this.polygons.find(polygon => polygon.id === polygonId);
       const polygonCoords = polygon.getPath().getArray();
       polygonToUpdate.coordinates = this.getCoordinates(polygonCoords);
     },
+    /**
+     * @description Obtiene las coordenadas en UTM en base a las coordenadas en latitud y longitud
+     * @param {Number} lat
+     * @param {Number} lng
+     * @returns {Object} { easting, northing }
+     */
     getUtmByCoordinates(lat, lng) {
       const utm = require('utm');
       const { easting, northing } = utm.fromLatLon(lat, lng);
       return { easting, northing };
     },
+    /**
+     * @description Obtiene las coordenadas en latitud y longitud en base a las coordenadas en UTM
+     * @param {Number} este
+     * @param {Number} norte
+     * @param {Number} huso
+     * @returns {Object} { latitude, longitude }
+     */
     getLatLongByUtm(este, norte, huso) {
       const utm = require('utm');
       const { latitude, longitude } = utm.toLatLon(este, norte, huso, 'S');
       return { latitude, longitude };
     },
+    /**
+     * @description Asigna las coordenadas en latitud y longitud en base a las coordenadas en UTM
+     * @returns {void}
+     */
     setLatLongByUtm() {
       const { latitude, longitude } = this.getLatLongByUtm(this.establishment.este, this.establishment.norte, this.establishment.huso);
       this.establishment.latitud = latitude;
       this.establishment.longitud = longitude;
     },
+    /**
+     * @description Asigna las coordenadas en UTM en base a las coordenadas en latitud y longitud
+     * @returns {void}
+     */
     setUtmByCoordinates() {
       const { easting, northing } = this.getUtmByCoordinates(this.establishment.latitud, this.establishment.longitud);
       this.establishment.este = easting;
       this.establishment.norte = northing;
     },
+    /**
+     * @description Limpia el mapa y los poligonos
+     * @returns {void}
+     */
     cleanMap() {
       this.polygons = [];
       this.getLoadedMap();
       this.drawingManager.setMap(this.map);
     },
+    /**
+     * @description Cambia el estado de la vista de informacion de los poligonos
+     * @returns {void}
+     */
     showPolygonsInformation() {
       this.viewPolygonsInformation = !this.viewPolygonsInformation;
     },
+    /**
+     * @description Verifica si el establecimiento tiene coordenadas en UTM
+     * @returns {Boolean}
+     */
     isUtm() {
       return this.establishment.este !== null && this.establishment.norte !== null;
     },
+    /**
+     * @description Calcula las coordenadas en UTM o latitud y longitud segun corresponda
+     * @returns {void}
+     */
     calculateCoordinates() {
       if (this.establishment.latitud !== null && this.establishment.este !== null) return;
       if (this.isUtm()) this.setLatLongByUtm()
       else this.setUtmByCoordinates()
     },
+    /**
+     * @description Guarda los poligonos en la base de datos
+     * @returns {void}
+     */
     async savePolygons() {
       const information = {
         codigo_vu: this.establishment.codigo_vu,
@@ -197,6 +269,10 @@ export default {
       }, 3000);
 
     },
+    /**
+     * @description Obtiene las coordenadas del establecimiento en la base de datos y las dibuja en el mapa
+     * @returns {void}
+     */
     async getCoordinatesToEstablisment() {
       const coordinates = await getCoodinatesByEstablishment(this.establishment.codigo_vu);
       if (coordinates.length === 0) return;
@@ -238,8 +314,6 @@ export default {
       });
     }
   },
-
-
 };
 </script>
 
